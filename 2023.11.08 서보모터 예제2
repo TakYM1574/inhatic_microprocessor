@@ -1,0 +1,29 @@
+/*
+광센서 가변저항에 의해 각도값바뀌는 서보모터
+*/
+
+#include <Servo.h>
+
+Servo myservo;  
+
+int val = A0; 
+
+void setup() {
+  myservo.attach(9);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor = analogRead(val);
+  if(sensor > 700)
+  {
+   myservo.write(180); 
+  }
+  else
+  {
+    myservo.write(0);
+ 
+  }
+  Serial.println(sensor);
+  delay(20);
+}
