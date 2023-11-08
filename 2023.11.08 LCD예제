@@ -1,0 +1,53 @@
+
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);  
+int count = 0;
+const int analogInPin = A0;  
+int sensorValue = 0;
+/*
+ 이모티콘 및 한글 등 제작시사용
+uint8_t read_han [8]={0x0A, 0x1E, 0x0A, 0x17, 0x16, 0x0A, 0x10, 0x1F };
+uint8_t read_kook [8]={0x1F, 0x01, 0x02, 0x1F, 0x04, 0x1F, 0x01, 0x02 }; 
+uint8_t degc [8]={0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E };
+uint8_t degV [8]={0x00, 0x00, 0x04, 0x0A, 0x11, 0x00, 0x00, 0x00 }; 
+uint8_t degB [8]={0x01, 0x02, 0x04, 0x08, 0x04, 0x02, 0x01, 0x00 }; 
+*/
+void setup()
+{
+  Serial.begin(9600);
+  lcd.init();                     
+  lcd.init();
+
+  //lcd.createChar (1,degc); // 이모티콘 제작된 문자를 1에 저장
+  //lcd.createChar (2,degV); // 이모티콘 제작된 문자를 2에 저장
+  //lcd.createChar (4,degB); // 이모티콘 제작된 문자를 4에 저장
+  
+  lcd.backlight();
+  lcd.setCursor(1,0);
+  lcd.print("Tak Young Min");
+  lcd.setCursor(1,1);
+  lcd.print("010-2446-1269");
+  delay(2000);
+  lcd.clear();
+}
+
+
+void loop()
+{
+  int sensorValue = analogRead(A0);
+  float Volt = sensorValue *5.0 / 1024.0;
+  lcd.setCursor(0,0);
+  lcd.print("ADC =");
+  lcd.print(sensorValue);
+  lcd.print("   ");
+  lcd.setCursor(0,1);
+  lcd.print("volt =");
+  lcd.print(Volt);
+  lcd.print("   ");
+  delay(100);
+  
+
+
+}
