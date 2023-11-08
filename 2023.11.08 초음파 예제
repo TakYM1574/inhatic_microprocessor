@@ -1,0 +1,25 @@
+int echopin = 12;
+int trigpin = 13;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigpin,OUTPUT);
+  pinMode(echopin,INPUT);
+}
+
+void loop(){
+  long duration;
+  digitalWrite(trigpin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigpin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigpin, LOW);
+
+  duration = pulseIn(echopin, HIGH);
+  float distance =((float)(340 * duration)/10000)/2;
+
+  Serial.print(distance);
+  Serial.println("cm");
+
+  delay(100);
+}
