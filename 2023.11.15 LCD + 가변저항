@@ -1,0 +1,36 @@
+
+#include <Wire.h> // must be included here so that Arduino library object file references work
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+
+char menu[7][12] = {"coffee", "Ice", "COCOA", "Milk", "HOT", "Fuck", "you"};
+long pri[7] = {1500, 20000, 43000, 700000, 30, 4444, 666};
+float cal[7] = {1420, 30, 9320, 320, 10, 4444, 666};
+int ls = 0;
+void setup () 
+{
+    Serial.begin(9600);
+    lcd.init();                      
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+}
+
+void loop () 
+{
+  int a = analogRead(A0);
+  int b = map(a,5,1000,0,6);
+
+  if(ls != b){
+    lcd.setCursor(3,0);
+  lcd.print(menu[b]);
+  lcd.print("    ");
+  lcd.setCursor(3,1);
+  lcd.print(pri[b]);
+  lcd.print("    ");
+  lcd.setCursor(12,1);
+  lcd.print(cal[b]);
+  lcd.print("    ");
+  ls = b;
+  }
+}
