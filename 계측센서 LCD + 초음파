@@ -1,0 +1,64 @@
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+byte D0[8] ={0,0,0,0,0,0,0,0};
+byte D1[8] ={16,16,16,16,16,16,16,16};
+byte D2[8] ={24,24,24,24,24,24,24,24};
+byte D3[8] ={28,28,28,28,28,28,28,28};
+byte D4[8] ={30,30,30,30,30,30,30,30};
+byte D5[8] ={31,31,31,31,31,31,31,31};
+
+int distCm;
+int i,bl,re;
+
+void setup() 
+{
+  lcd.init();
+  lcd.backlight();
+  lcd.createChar(0,D0);
+  lcd.createChar(1,D1);
+  lcd.createChar(2,D2);
+  lcd.createChar(3,D3);
+  lcd.createChar(4,D4);
+  lcd.createChar(5,D5);
+  pinMode(2, OUTPUT);
+  pinMode(3, INPUT);
+}
+
+void loop()
+{
+  long duration, distance;
+  digitalWrite(2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(2, LOW);
+  distCm=pulseIn(3, HIGH)*340.0/2.0/10000.0; 
+  
+ bl = distCm/5;
+ re = distCm%5;
+
+ lcd.setCursor(0,0);
+ lcd.print("DIST. =");
+ lcd.print(distCm);
+ lcd.print(" Cm    ");
+ lcd.setCursor(0,1);
+ lcd.print("U:");
+ if(bl>=14){
+  for(i = 1; i <15; i++)
+  {
+    lcd.write(5);
+  }
+ }
+  else{
+    for(i = 1; i <=bl; i++)
+    {
+      lcd.write(5);
+    }
+    lcd.write(re);
+    for(i = bl+1; i < 14;  i++)
+    {
+      lcd.print(" ");
+    }
+  }
+  delay(500);
+}
