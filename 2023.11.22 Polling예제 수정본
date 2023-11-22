@@ -1,0 +1,76 @@
+
+const int ledPin1 =  11;      // the number of the LED pin
+const int ledPin2 =  10;      // the number of the LED pin
+const int ledPin3 =  9;      // the number of the LED pin
+const int ledPin4 =  8;      // the number of the LED pin
+
+#define led0 13
+
+const int buttonPin1 = 2;     // the number of the pushbutton pin
+const int buttonPin2 = 3;     // the number of the pushbutton pin
+const int buttonPin3 = 4;     // the number of the pushbutton pin
+const int buttonPin4 = 5;     // the number of the pushbutton pin
+
+int buttonState1 = 0;
+int buttonState2 = 0;
+int buttonState3 = 0;
+int buttonState4 = 0;
+
+int i = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(led0, OUTPUT);
+
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(ledPin3, OUTPUT);
+  pinMode(ledPin4, OUTPUT);
+  
+  pinMode(buttonPin1, INPUT);
+
+}
+
+void loop() {
+
+  buttonState1 = digitalRead(buttonPin1);
+
+  if (buttonState1 == LOW) {
+
+    digitalWrite(led0, HIGH);
+    Serial.println("led0 On");
+    delay(500);
+    digitalWrite(led0, LOW);
+    Serial.println("led0 Off");
+    delay(500);
+
+  }
+  else if(i == 0){
+  digitalWrite(ledPin1, HIGH);
+  delay(1000);
+  digitalWrite(ledPin1, LOW);
+  i++;
+  }
+  else if(i == 1){
+  digitalWrite(ledPin2, HIGH);
+  delay(1000);
+  digitalWrite(ledPin2, LOW);
+  i++;
+  }
+  else if(i == 2){
+  digitalWrite(ledPin3, HIGH);
+  delay(1000);
+  digitalWrite(ledPin3, LOW);
+  i++;
+  }
+  else if(i == 3){
+  digitalWrite(ledPin4, HIGH);
+  delay(1000);
+  digitalWrite(ledPin4, LOW);
+  i++;
+  }
+  if(i ==4)
+  {
+    i=0;
+  }
+}
