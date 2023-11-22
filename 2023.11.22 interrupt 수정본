@@ -1,0 +1,89 @@
+// Arduino uno에서는 2,3번핀만 인터럽트를 사용할 수있음
+// 토글 추가
+
+const int ledPin1 =  11;      // the number of the LED pin
+const int ledPin2 =  10;      // the number of the LED pin
+const int ledPin3 =  9;      // the number of the LED pin
+const int ledPin4 =  8;      // the number of the LED pin
+
+#define led0 13
+
+const int buttonPin1 = 2;     // the number of the pushbutton pin
+const int buttonPin2 = 3;     // the number of the pushbutton pin
+const int buttonPin3 = 4;     // the number of the pushbutton pin
+const int buttonPin4 = 5;     // the number of the pushbutton pin
+
+int buttonState1 = 0;
+int buttonState2 = 0;
+int buttonState3 = 0;
+int buttonState4 = 0;
+
+int onoff = 0;
+
+void led0_Blink(){
+      digitalWrite(led0, HIGH);
+    Serial.println("led0 On");
+    delay(500);
+    digitalWrite(led0, LOW);
+    Serial.println("led0 Off");
+    delay(500);
+    onoff = ~onoff;
+ digitalWrite(led0, onoff);
+ Serial.println(onoff);
+}
+void led0_onoff(){
+ onoff = ~onoff;
+ digitalWrite(led0, onoff);
+ Serial.println(onoff);
+}
+
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(led0, OUTPUT);
+
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(ledPin3, OUTPUT);
+  pinMode(ledPin4, OUTPUT);
+  
+  pinMode(buttonPin1, INPUT);
+  attachInterrupt(digitalPinToInterrupt(buttonPin1),led0_onoff,FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin2),led0_Blink,FALLING);
+
+}
+
+void loop() {
+ 
+ 
+//  buttonState1 = digitalRead(buttonPin1);
+//
+//  if (buttonState1 == LOW) {
+//
+//    digitalWrite(led0, HIGH);
+//    Serial.println("led0 On");
+//    delay(500);
+//    digitalWrite(led0, LOW);
+//    Serial.println("led0 Off");
+//    delay(500);
+//
+//  }
+  //---------------------
+  digitalWrite(ledPin1, HIGH);
+  delay(1000);
+  digitalWrite(ledPin1, LOW);
+
+  digitalWrite(ledPin2, HIGH);
+  delay(1000);
+  digitalWrite(ledPin2, LOW);
+
+  digitalWrite(ledPin3, HIGH);
+  delay(1000);
+  digitalWrite(ledPin3, LOW);
+
+  digitalWrite(ledPin4, HIGH);
+  delay(1000);
+  digitalWrite(ledPin4, LOW);
+
+
+}
