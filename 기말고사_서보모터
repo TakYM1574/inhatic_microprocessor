@@ -1,0 +1,43 @@
+/*
+  서보 갈색선 = GND
+  서보 빨간선 = 5V
+  서보 주황선 = 9번핀 (셋업에 9 바꾸면 핀도 바꿔야 될껄..?)
+*/
+
+#include <Servo.h>
+
+Servo myservo;
+
+int potpin = A0; // 서보 값 번경을 위한 아날로그 핀
+int val;
+int A = 0;
+void setup() {
+  myservo.attach(9);
+  myservo.write(0);
+}
+
+void loop() {
+  servo2();
+}
+
+void servo1() // 아나로그값을 실시간으로 받아서 움직임
+{
+  val = analogRead(potpin);
+  val = map(val, 0, 1023, 0, 180);
+  myservo.write(val);
+  delay(100);
+}
+
+void servo2() // 서보가 180도갔다가 0도로 다시옴 아마도..?
+{
+  for(int i =0; i < 180; i++)
+  {
+    myservo.write(i);
+    
+  }
+  for(int i =180; i < 1; i--)
+  {
+    myservo.write(i);
+    
+  } 
+}
