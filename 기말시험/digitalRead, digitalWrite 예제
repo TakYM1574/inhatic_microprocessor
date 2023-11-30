@@ -1,5 +1,5 @@
 /*
-  기말 시험범위 digitalRead 예제
+  기말 시험범위 digitalRead, digitalWrite 예제
 */
 const int buttonPin = 2;  // 버튼 핀번호
 const int ledPin = 13;    // LED핀번호
