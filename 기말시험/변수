@@ -13,13 +13,13 @@ int arr2[2][3] = {{0,10,20},{30,40,50}}; //2차원 배열
 //  1행   30        40        50
 // ex) arr2[0][2] = 20
 char name[30] = "aaaaaaaaaa";
-string myString = "20";
+char str = "20"; // 문자열 20이라 계산이 안됨
+int st = 0;
 void setup() {
   // put your setup code here, to run once:
 
 }
 
 void loop() {
-  mysrting.toint
 
 }
