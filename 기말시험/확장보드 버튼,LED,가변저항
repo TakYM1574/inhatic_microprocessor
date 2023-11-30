@@ -1,0 +1,316 @@
+/*
+*일단 교수님 코드랑 많이 다름 그래서 참고만 하는 정도로 봐야됨
+*틴커캐드로 옮겼을때 오류 뜨면 페이지 새로고침하고 다시 붙여넣고 돌리면 됨
+
+LED 음극은 GND 고정
+-LED 양극
+-빨강 = 13
+-노랑 = 12
+-파랑 = 11
+-초록 = 10
+-흰색 = 9
+-주황 = 8
+
+가변저항
+-터미널 1 = 5V
+-와이퍼 = A1
+-터미널 2 = GND
+
+버튼 터미널 2a는 GND 고정
+-1번 = 7
+-2번 = 6
+-3번 = 5
+-4번 = 4
+-5번 = 3
+*/
+
+//*******************************핀설정**********************************
+const int R_L = 13;         // 빨간 LED
+const int Y_L = 12;         // 노란 LED
+const int B_L = 11;         // 파란 LED
+const int G_L = 10;         // 초록 LED
+const int W_L = 9;          // 흰색 LED
+const int O_L = 8;          // 주황 LED
+const int S_1 = 7;          // 버튼 1번
+const int S_2 = 6;          // 버튼 2번
+const int S_3 = 5;          // 버튼 3번
+const int S_4 = 4;          // 버튼 4번
+const int S_5 = 3;          // 버튼 5번
+const int sensorPin = A1;   // 가변저항
+//***********************************************************************
+
+int senservalue = 0;        // 센서값을 바로 받아주는 변수
+int sensorMin = 1023;       // 센서 값 범위 설정
+int sensorMax = 0;          // 센서값 범위 설정
+
+//*******************************LED 상태*********************************
+int r = 0;                 // 빨간 LED 상태(토글 스위치 변환을 위한 변수)
+int y = 0;                 // 노란 LED 상태(토글 스위치 변환을 위한 변수)
+int b = 0;                 // 파란 LED 상태(토글 스위치 변환을 위한 변수)
+int g = 0;                 // 초록 LED 상태(토글 스위치 변환을 위한 변수)
+//***********************************************************************
+
+int c = 0;                 // 흰색, 주황색 LED 토글 스위치 변환을 위한 변수
+int cc = 0;                // 토글 스위치 변환을 위한 변수
+
+//*******************************버튼 상태********************************
+int s1 = 0;               // 버튼 1번의 상태를 나타내 주는 변수
+int s2 = 0;               // 버튼 2번의 상태를 나타내 주는 변수
+int s3 = 0;               // 버튼 3번의 상태를 나타내 주는 변수
+int s4 = 0;               // 버튼 4번의 상태를 나타내 주는 변수
+//***********************************************************************
+
+
+void setup()
+{
+  pinMode(R_L, OUTPUT); 
+  pinMode(Y_L, OUTPUT);
+  pinMode(B_L, OUTPUT);
+  pinMode(G_L, OUTPUT);
+  pinMode(W_L, OUTPUT);
+  pinMode(O_L, OUTPUT);
+  pinMode(S_1, INPUT_PULLUP);
+  pinMode(S_2, INPUT_PULLUP);
+  pinMode(S_3, INPUT_PULLUP); 
+  pinMode(S_4, INPUT_PULLUP);
+  pinMode(S_5, INPUT_PULLUP);
+}
+
+void loop()
+{
+//*******************************공용 부분********************************
+  senservalue = analogRead(sensorPin); // 센서값 아날로그 신호로 받아줌
+
+  senservalue = map(senservalue, sensorMin, sensorMax, 0, 100);
+  // 센서값의 최대 최소가 1023에 0 이라 그에 비례하여 100 에 0으로 바꿔줌
+  // 틴커케드에서 LED 가 0~100 사이값만 쓰는거 같아서 설정해둠
+  // 나중에 시험볼 때에는 LED 가 255까지 되니까 100을 255로 바꿔주기만 하면됨
+
+  s1 = digitalRead(S_1); // 변수에 버튼 1번의 상태를 넣어줌
+  s2 = digitalRead(S_2); // 변수에 버튼 2번의 상태를 넣어줌
+  s3 = digitalRead(S_3); // 변수에 버튼 3번의 상태를 넣어줌
+  s4 = digitalRead(S_4); // 변수에 버튼 4번의 상태를 넣어줌
+//***********************************************************************
+
+//*******************************몰라도 됨********************************
+// 코드 하나에 합치면서 간섭 안받게 설정해놓은거라 굳이 안봐도됨
+  if(digitalRead(S_5) == 0 && c == 0) // 버튼 5번이 눌리고 변수 c가 0일때
+  {
+    c = 1;                            // 변수 c를 1로 바꿈
+    digitalWrite(R_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(Y_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(B_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(G_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(O_L,HIGH);           // 주황 LED (ON)
+    digitalWrite(W_L,LOW);            // 흰색 LED (OFF)
+    delay(200);                       // 중복 눌림방지용 딜레이
+  }
+  else if(digitalRead(S_5) == 0 && c == 1) // 위에 조건이 아니면서
+  {                                   // 버튼 5번이 눌리고 변수 c가 1일때
+    c = 2;                            // 변수 c를 2로 바꿈
+    digitalWrite(R_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(Y_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(B_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(G_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(O_L,LOW);            // 주황 LED (OFF)
+    digitalWrite(W_L,HIGH);           // 흰색 LED (ON)
+    delay(200);                       // 중복 눌림방지용 딜레이
+  }
+  else if(digitalRead(S_5) == 0 && c == 2) // 위에 조건이 아니면서
+  {                                   // 버튼 5번이 눌리고 변수 c가 2일때
+    c = 3;                            // 변수 c를 3으로 바꿈
+    digitalWrite(R_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(Y_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(B_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(G_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(O_L,HIGH);           // 주황 LED (ON)
+    digitalWrite(W_L,HIGH);           // 흰색 LED (ON)
+    delay(200);                       // 중복 눌림방지용 딜레이
+  }
+  else if(digitalRead(S_5) == 0 && c == 3) // 위에 조건이 아니면서
+  {                                   // 버튼 5번이 눌리고 변수 c가 3일때
+    c = 0;                            // 변수 c를 0으로 바꿈
+    digitalWrite(R_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(Y_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(B_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(G_L,LOW);            // LED초기화 (OFF)
+    digitalWrite(O_L,LOW);            // 주황 LED (OFF)
+    digitalWrite(W_L,LOW);            // 흰색 LED (OFF)
+    delay(200);                       // 중복 눌림방지용 딜레이
+  }
+//***********************************************************************
+
+//*******************************코드 정리********************************
+  if(c== 0) // 파란 LED 밝기 조절 (흰 0 주 0)
+  {
+    analogWrite(B_L,senservalue);
+  }
+
+  else if (c == 1) // 가변저항에 따라 LED 색이 바뀜 (흰 0 주 1)
+  {
+    if(senservalue < 25)
+    {
+      digitalWrite(R_L,HIGH);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+    }
+    else if(senservalue < 50)
+    {
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,HIGH);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+    }
+    else if(senservalue < 75)
+    {
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,HIGH);
+      digitalWrite(G_L,LOW);
+    }
+    else 
+    {
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,HIGH);
+    }
+  }
+  
+  else if(c == 2) // 토글 스위치로 바꿔줌 (흰 1 주 0)
+  {
+    if(s1 == LOW && r == 0)
+    {
+      r = 1;
+      digitalWrite(R_L,HIGH);
+      delay(200);
+    }
+    else if (s1 == LOW && r == 1)
+    {
+      r = 0;
+      digitalWrite(R_L,LOW);
+      delay(200);
+    }
+    if(s2 == LOW && y == 0)
+    {
+      y = 1;
+      digitalWrite(Y_L,HIGH);
+      delay(200);
+    }
+    else if (s2 == LOW && y == 1)
+    {
+      y = 0;
+      digitalWrite(Y_L,LOW);
+      delay(200);
+    }
+    if(s3 == LOW && b == 0)
+    {
+      b = 1;
+      digitalWrite(B_L,HIGH);
+      delay(200);
+    }
+    else if (s3 == LOW && b == 1)
+    {
+      b = 0;
+      digitalWrite(B_L,LOW);
+      delay(200);
+    }
+    if(s4 == LOW && g == 0)
+    {
+      g = 1;
+      digitalWrite(G_L,HIGH);
+      delay(200);
+    }
+    else if (s4 == LOW && g == 1)
+    {
+      g = 0;
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+  }
+
+  else if (c == 3) // 버튼 1번, 2번을 누름에 따라 위치가 바뀜
+  {                // 버튼 3번 = 초기화  (흰 1 주 1)
+    if(s2 == LOW && cc == 0)
+    {
+      cc ++;
+      digitalWrite(R_L,HIGH);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s2 == LOW && cc == 1)
+    {
+      cc ++;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,HIGH);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s2 == LOW && cc == 2)
+    {
+      cc ++;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,HIGH);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s2 == LOW && cc == 3)
+    {
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,HIGH);
+      delay(200);
+    }
+
+    if(s1 == LOW && cc == 3)
+    {
+      cc --;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,HIGH);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s1 == LOW && cc == 2)
+    {
+      cc --;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,HIGH);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s1 == LOW && cc == 1)
+    {
+      digitalWrite(R_L,HIGH);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+      delay(200);
+    }
+    else if(s1 == LOW && cc == 0)
+    {
+      cc = 3;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,HIGH);
+      delay(200);
+    }
+
+    if(s3 == LOW)
+    {
+      cc = 0;
+      digitalWrite(R_L,LOW);
+      digitalWrite(Y_L,LOW);
+      digitalWrite(B_L,LOW);
+      digitalWrite(G_L,LOW);
+    }
+  }
+}
