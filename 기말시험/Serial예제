@@ -1,0 +1,45 @@
+// RGB=255,128,64 with NewLine end  send from PC
+
+const int redPin = 9;
+const int greenPin = 10;
+const int bluePin = 11;
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+
+}
+
+void loop() {
+
+  if (Serial.available() > 0) {
+
+    String strRead = Serial.readStringUntil('\n');
+
+    if (strRead.indexOf("RGB=") != -1) {
+
+      int commaPos1 = strRead.indexOf(",");
+      int commaPos2 = strRead.indexOf(",", commaPos1 + 1);
+
+      int red = strRead.substring(4, commaPos1).toInt();
+      int green = strRead.substring(commaPos1 + 1, commaPos2).toInt();
+      int blue = strRead.substring(commaPos2 + 1, strRead.length()).toInt();
+
+      analogWrite(redPin, red);
+      analogWrite(greenPin, green);
+      analogWrite(bluePin, blue);
+
+      Serial.print("red:"); Serial.print(red);
+      Serial.print(", green:"); Serial.print(green);
+      Serial.print(", blue:"); Serial.println(blue);
+    }
+
+
+  }
+
+
+}
