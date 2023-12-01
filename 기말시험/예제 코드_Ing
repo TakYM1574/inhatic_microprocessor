@@ -1,0 +1,380 @@
+
+#include <Wire.h> // must be included here so that Arduino library object file references work
+#include <RtcDS3231.h>
+#include <LiquidCrystal_I2C.h>
+#include <MsTimer2.h>
+RtcDS3231<TwoWire> Rtc(Wire);
+LiquidCrystal_I2C lcd(0x27, 16, 2);  //lcd 객체 선언
+
+#define led0 13
+
+const int ledPin1 =  11; 
+const int ledPin2 =  10; 
+const int ledPin3 =  9;
+const int ledPin4 =  8;    
+
+const int buttonPin1 = 2;
+const int buttonPin2 = 3;
+const int buttonPin3 = 4;
+const int buttonPin4 = 5;
+
+const int Rot = A0;
+
+int buttonState1 = 0;
+int buttonState2 = 0;
+int buttonState3 = 0;
+int buttonState4 = 0;
+
+int t_1 = 0;
+int t_2 = 0;
+int t_3 = 0;
+int t_4 = 0;
+
+int rm = 0;
+int RM = 0;
+
+
+uint8_t read_icon [8]={0x04, 0x0E, 0x15, 0x0C, 0x06, 0x15, 0x0E, 0x04 };
+
+struct cafe{
+char menu[20];
+long pri;
+};
+
+struct cafe drink[4]{
+  {"Coffee",2500},
+  {"iced tea",3500},
+  {"COCOA",4000},
+  {"Milk",2000},
+};
+
+void b_tog1()
+{
+  if(t_1 == 0)
+  {
+    t_1 = 1;
+    t_2 = 0;
+    t_3 = 0;
+    t_4 = 0;
+  }
+  else if(t_1 == 1)
+  {
+    t_1 = 0;
+  }
+  delay(200);
+}
+
+void b_tog2()
+{
+  if(t_2 == 0)
+  {
+    t_1 = 0;
+    t_2 = 1;
+    t_3 = 0;
+    t_4 = 0;
+  }
+  else if(t_2 == 1)
+  {
+    t_2 = 0;
+  }
+  delay(200);
+}
+
+void b_tog3()
+{
+  if(t_3 == 0)
+  {
+    t_1 = 0;
+    t_2 = 0;
+    t_3 = 1;
+    t_4 = 0;
+  }
+  else if(t_3 == 1)
+  {
+    t_3 = 0;
+  }
+  delay(200);
+}
+
+void b_tog4()
+{
+  if(t_4 == 0)
+  {
+    t_1 = 0;
+    t_2 = 0;
+    t_3 = 0;
+    t_4 = 1;
+  }
+  else if(t_4 == 1)
+  {
+    t_4 = 0;
+  }
+  delay(200);
+}
+void LCD_Menu()
+{
+  if(RM == 0)
+  {
+    digitalWrite(ledPin1, HIGH);
+    digitalWrite(ledPin2, LOW);
+    digitalWrite(ledPin3, LOW);
+    digitalWrite(ledPin4, LOW);
+    delay(200);
+    digitalWrite(ledPin1, HIGH);
+    digitalWrite(ledPin2, HIGH);
+    digitalWrite(ledPin3, LOW);
+    digitalWrite(ledPin4, LOW);
+    delay(200);
+    digitalWrite(ledPin1, HIGH);
+    digitalWrite(ledPin2, HIGH);
+    digitalWrite(ledPin3, HIGH);
+    digitalWrite(ledPin4, LOW);
+    delay(200);
+    digitalWrite(ledPin1, HIGH);
+    digitalWrite(ledPin2, HIGH);
+    digitalWrite(ledPin3, HIGH);
+    digitalWrite(ledPin4, HIGH);
+    delay(200);
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, HIGH);
+    digitalWrite(ledPin3, HIGH);
+    digitalWrite(ledPin4, HIGH);
+    delay(200);
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, LOW);
+    digitalWrite(ledPin3, HIGH);
+    digitalWrite(ledPin4, HIGH);
+    delay(200);
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, LOW);
+    digitalWrite(ledPin3, LOW);
+    digitalWrite(ledPin4, HIGH);
+    delay(200);
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, LOW);
+    digitalWrite(ledPin3, LOW);
+    digitalWrite(ledPin4, LOW);
+  }
+  else
+  {
+    delay(1600);
+  }
+}
+
+bool wasError(const char* errorTopic = "")
+{
+    uint8_t error = Rtc.LastError();
+    if (error != 0)
+    {
+        Serial.print("[");
+        Serial.print(errorTopic);
+        Serial.print("] WIRE communications error (");
+        Serial.print(error);
+        Serial.print(") : ");
+
+        switch (error)
+        {
+        case Rtc_Wire_Error_None:
+            Serial.println("(none?!)");
+            break;
+        case Rtc_Wire_Error_TxBufferOverflow:
+            Serial.println("transmit buffer overflow");
+            break;
+        case Rtc_Wire_Error_NoAddressableDevice:
+            Serial.println("no device responded");
+            break;
+        case Rtc_Wire_Error_UnsupportedRequest:
+            Serial.println("device doesn't support request");
+            break;
+        case Rtc_Wire_Error_Unspecific:
+            Serial.println("unspecified error");
+            break;
+        case Rtc_Wire_Error_CommunicationTimeout:
+            Serial.println("communications timed out");
+            break;
+        }
+        return true;
+    }
+    return false;
+}
+
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+void setup () 
+{
+    Serial.begin(9600);
+
+    Serial.print("compiled: ");
+    Serial.print(__DATE__);
+    Serial.println(__TIME__);
+    
+    Rtc.Begin();
+#if defined(WIRE_HAS_TIMEOUT)
+    Wire.setWireTimeout(3000 /* us */, true /* reset_on_timeout */);
+#endif
+
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    printDateTime(compiled);
+    Serial.println();
+
+    if (!Rtc.IsDateTimeValid()) 
+    {
+        if (!wasError("setup IsDateTimeValid"))
+        {
+
+            Serial.println("RTC lost confidence in the DateTime!");
+            Rtc.SetDateTime(compiled);
+        }
+    }
+
+    if (!Rtc.GetIsRunning())
+    {
+        if (!wasError("setup GetIsRunning"))
+        {
+            Serial.println("RTC was not actively running, starting now");
+            Rtc.SetIsRunning(true);
+        }
+    }
+
+    RtcDateTime now = Rtc.GetDateTime();
+    if (!wasError("setup GetDateTime"))
+    {
+        if (now < compiled)
+        {
+            Serial.println("RTC is older than compile time, updating DateTime");
+            Rtc.SetDateTime(compiled);
+        }
+        else if (now > compiled)
+        {
+            Serial.println("RTC is newer than compile time, this is expected");
+        }
+        else if (now == compiled)
+        {
+            Serial.println("RTC is the same as compile time, while not expected all is still fine");
+        }
+    }
+
+    Rtc.Enable32kHzPin(false);
+    wasError("setup Enable32kHzPin");
+    Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeNone); 
+    wasError("setup SetSquareWavePin");
+    lcd.init();
+  lcd.init();
+  lcd.backlight();
+
+  lcd.createChar (1,read_icon);
+
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(ledPin3, OUTPUT);
+  pinMode(ledPin4, OUTPUT);
+
+  pinMode(buttonPin1, INPUT);
+  pinMode(buttonPin2, INPUT);
+  pinMode(buttonPin3, INPUT);
+  pinMode(buttonPin4, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(buttonPin1), b_tog1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin2), b_tog2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin3), b_tog3, FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin4), b_tog4, FALLING);
+
+  MsTimer2::set(1600, LCD_Menu);
+  MsTimer2::start();
+}
+
+void loop () 
+{
+  rm = analogRead(Rot);
+  RM = map(rm,0,1024,0,7);
+  lcd.setCursor(0, 0);
+  RtcDateTime now = Rtc.GetDateTime();
+  printDateTime(now);
+
+  if(RM == 0);
+  {
+    lcd.setCursor(13, 0);
+    lcd.print("M:1");
+    if(t_1 == 1)
+    {
+      lcd.setCursor(0, 1);
+      lcd.print(drink[0].menu);
+      lcd.print("    ");
+      lcd.setCursor(11,1);
+      lcd.print(drink[0].pri,1);
+    }
+    else if(t_2 == 1)
+    {
+      lcd.setCursor(0, 1);
+      lcd.print(drink[1].menu);
+      lcd.print("    ");
+      lcd.setCursor(11,1);
+      lcd.print(drink[1].pri,1);
+    }
+    else if(t_3 == 1)
+    {
+      lcd.setCursor(0, 1);
+      lcd.print(drink[2].menu);
+      lcd.print("    ");
+      lcd.setCursor(11,1);
+      lcd.print(drink[2].pri,1);
+    }
+    else if(t_4 == 1)
+    {
+      lcd.setCursor(0, 1);
+      lcd.print(drink[3].menu);
+      lcd.print("    ");
+      lcd.setCursor(11,1);
+      lcd.print(drink[3].pri,1);
+    }
+    else
+    {
+      lcd.setCursor(0, 1);
+      lcd.print("Select Menu");
+      lcd.print("     ");
+    }
+  }
+}
+
+#define countof(a) (sizeof(a) / sizeof(a[0]))
+
+void printDateTime(const RtcDateTime& dt)
+{
+    char datestring[46];
+    
+
+    sprintf(datestring,           
+            "%04u/%02u/%02u",
+            dt.Year(),
+            dt.Month(),
+            dt.Day()
+            );
+    lcd.print(datestring);
+}
+
+void printDateTime1(const RtcDateTime& dt)
+{
+    char datestring1[46];
+    
+
+    sprintf(datestring1,           
+            "%02u:%02u:%02u",
+            dt.Hour(),
+            dt.Minute(),
+            dt.Second()
+            );
+    lcd.print(datestring1);
+}
+
+void printDateTime2(const RtcDateTime& dt)
+{
+    char datestring2[46];
+    
+
+    sprintf(datestring2,           
+            "%s",
+            daysOfTheWeek[dt.DayOfWeek()]
+            );
+    lcd.print(datestring2);
+}
