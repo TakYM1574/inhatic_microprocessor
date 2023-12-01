@@ -4,7 +4,8 @@
     -m1 = LCD 메뉴
     -m2 = 부저 
     -m3 = 각종 센서들
-  
+    -m4 = 시리얼 통신 RGB
+    -m5 = 서보모터
 */
 
 #include <Wire.h> 
@@ -19,19 +20,22 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define DHTPIN 2
 #define DHTTYPE    DHT11
 #define led0 13
+#include <Servo.h>
+
+Servo myservo;
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 uint32_t delayMS;
 //------------------ 변수 선언 -----------------------
 const int ledPin1 =  11; 
 const int ledPin2 =  10; 
-const int ledPin3 =  9;
-const int ledPin4 =  8;    
+const int ledPin3 =  8;
+const int ledPin4 =  9;    
 
 const int piezo = 7; // 부저 핀번호
 
 const int buttonPin1 = 2;
-const int buttonPin2 = 3;
+const int buttonPin2 = 1;
 const int buttonPin3 = 4;
 const int buttonPin4 = 5;
 
@@ -345,13 +349,15 @@ void setup ()
   dht.temperature().getSensor(&sensor);
   dht.humidity().getSensor(&sensor);
   //--------------------------------------------------
+  myservo.attach(3);
+  myservo.write(0);
 }
 
 void loop () 
 {
   // ------------- 계속 작동해야 하는 코드 --------------
   rm = analogRead(Rot);
-  RM = map(rm,0,1024,0,2);
+  RM = map(rm,0,1024,0,4);
 
   if(movalu != RM)
   {
@@ -644,6 +650,87 @@ void loop ()
         digitalWrite(ledPin4, HIGH);
       }
 
+    }
+  }
+  else if(RM == 3)
+  {
+    lcd.setCursor(13, 0);
+    lcd.print("M:4");
+    lcd.setCursor(0, 1);
+    lcd.print("RGB");
+    if (Serial.available() > 0) {
+
+    String strRead = Serial.readStringUntil('\n');
+
+    if (strRead.indexOf("RGB=") != -1) {
+      int commaPos1 = strRead.indexOf(",");
+      int commaPos2 = strRead.indexOf(",", commaPos1 + 1);
+
+      int red = strRead.substring(4, commaPos1).toInt();
+      int green = strRead.substring(commaPos1 + 1, commaPos2).toInt();
+      int blue = strRead.substring(commaPos2 + 1, strRead.length()).toInt();
+
+      analogWrite(ledPin4, red);
+      analogWrite(ledPin2, green);
+      analogWrite(ledPin1, blue);
+
+      Serial.print("red:"); Serial.print(red);
+      Serial.print(", green:"); Serial.print(green);
+      Serial.print(", blue:"); Serial.println(blue);
+      lcd.setCursor(3, 1);
+      lcd.print(red);
+      lcd.setCursor(6, 1);
+      lcd.print(", ");
+      lcd.setCursor(8, 1);
+      lcd.print(green);
+      lcd.setCursor(11, 1);
+      lcd.print(", ");
+      lcd.setCursor(13, 1);
+      lcd.print(blue);
+
+      }
+    }
+  }
+  else if(RM == 4)
+  {
+    lcd.setCursor(13, 0);
+    lcd.print("M:5");
+    lcd.setCursor(0, 1);
+    lcd.print("Servo    ");
+    if(t_1 == 1)
+    {
+      myservo.write(45);
+      delay(200);
+      lcd.setCursor(13, 1);
+      lcd.print(" 45");
+    }
+    else if(t_2 == 1)
+    {
+      myservo.write(90);
+      delay(200);
+      lcd.setCursor(13, 1);
+      lcd.print(" 90");
+    }
+    else if(t_3 == 1)
+    {
+      myservo.write(135);
+      delay(200);
+      lcd.setCursor(13, 1);
+      lcd.print("135");
+    }
+    else if(t_4 == 1)
+    {
+      myservo.write(180);
+      delay(200);
+      lcd.setCursor(13, 1);
+      lcd.print("180");
+    }
+    else
+    {
+      myservo.write(0);
+      delay(200);
+      lcd.setCursor(13, 1);
+      lcd.print("  0");
     }
   }
   
