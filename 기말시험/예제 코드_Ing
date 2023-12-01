@@ -1,24 +1,44 @@
+/*
+  기말고사 예제 합친거
+  가변저항을 돌려서 모드를 바꿀 수 있음
+    -m1 = LCD 메뉴
+    -m2 = 부저 
+    -m3 = 각종 센서들
+  
+*/
 
-#include <Wire.h> // must be included here so that Arduino library object file references work
+#include <Wire.h> 
 #include <RtcDS3231.h>
 #include <LiquidCrystal_I2C.h>
 #include <MsTimer2.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 RtcDS3231<TwoWire> Rtc(Wire);
-LiquidCrystal_I2C lcd(0x27, 16, 2);  //lcd 객체 선언
-
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+#define DHTPIN 2
+#define DHTTYPE    DHT11
 #define led0 13
 
+DHT_Unified dht(DHTPIN, DHTTYPE);
+uint32_t delayMS;
+//------------------ 변수 선언 -----------------------
 const int ledPin1 =  11; 
 const int ledPin2 =  10; 
 const int ledPin3 =  9;
 const int ledPin4 =  8;    
+
+const int piezo = 7; // 부저 핀번호
 
 const int buttonPin1 = 2;
 const int buttonPin2 = 3;
 const int buttonPin3 = 4;
 const int buttonPin4 = 5;
 
-const int Rot = A0;
+const int Rot = A0; //가변저항
+const int LM35 = A1;
+const int Light = A2;
+const int Rec = A3; //IR
 
 int buttonState1 = 0;
 int buttonState2 = 0;
@@ -30,12 +50,24 @@ int t_2 = 0;
 int t_3 = 0;
 int t_4 = 0;
 
-int rm = 0;
-int RM = 0;
+int t_1s = 0;
+int t_2s = 0;
+int t_3s = 0;
+int t_4s = 0;
 
+int rm = 0; // 가변저항 변수
+int RM = 0; // 가변저항 변수
 
+int movalu = 0; // 모드변경시 초기화를 위한 변수
+//---------------------------------------------------
+
+//---------------- 이모티콘 생성 ---------------------
 uint8_t read_icon [8]={0x04, 0x0E, 0x15, 0x0C, 0x06, 0x15, 0x0E, 0x04 };
+uint8_t read_do [8]={0x10, 0x00, 0x0E, 0x11, 0x10, 0x10, 0x11, 0x0E };
+uint8_t read_per [8]={0x19, 0x1A, 0x02, 0x04, 0x04, 0x08, 0x0B, 0x13 };
+//---------------------------------------------------
 
+//------------------ 구조체 생성 -----------------------
 struct cafe{
 char menu[20];
 long pri;
@@ -47,7 +79,9 @@ struct cafe drink[4]{
   {"COCOA",4000},
   {"Milk",2000},
 };
+//---------------------------------------------------
 
+//------------- 인터럽트 활용 (토글) ------------------
 void b_tog1()
 {
   if(t_1 == 0)
@@ -111,6 +145,9 @@ void b_tog4()
   }
   delay(200);
 }
+//---------------------------------------------------
+
+//------------- 인터럽트 활용 (LED) ------------------
 void LCD_Menu()
 {
   if(RM == 0)
@@ -160,7 +197,9 @@ void LCD_Menu()
     delay(1600);
   }
 }
+//---------------------------------------------------
 
+//------------- 타이머 필수 변수(?) ------------------
 bool wasError(const char* errorTopic = "")
 {
     uint8_t error = Rtc.LastError();
@@ -200,9 +239,10 @@ bool wasError(const char* errorTopic = "")
 
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
+//---------------------------------------------------
 void setup () 
 {
+  // ------------- 타이머 필수 셋업(?) ------------------
     Serial.begin(9600);
 
     Serial.print("compiled: ");
@@ -262,9 +302,15 @@ void setup ()
     lcd.init();
   lcd.init();
   lcd.backlight();
+  //---------------------------------------------------
 
+  // ---------------- 이모티콘 지정 --------------------
   lcd.createChar (1,read_icon);
+  lcd.createChar (2,read_do);
+  lcd.createChar (3,read_per);
+  //---------------------------------------------------
 
+  // ---------------- 핀 모드 지정 ---------------------
   pinMode(ledPin1, OUTPUT);
   pinMode(ledPin2, OUTPUT);
   pinMode(ledPin3, OUTPUT);
@@ -275,6 +321,15 @@ void setup ()
   pinMode(buttonPin3, INPUT);
   pinMode(buttonPin4, INPUT);
 
+  pinMode(Rot, INPUT);
+  pinMode(LM35, INPUT);
+  pinMode(Light, INPUT);
+  pinMode(Rec, INPUT);
+
+  pinMode(piezo, OUTPUT);
+  //---------------------------------------------------
+
+  // ---------------- 인터럽트 설정 ---------------------
   attachInterrupt(digitalPinToInterrupt(buttonPin1), b_tog1, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin2), b_tog2, FALLING);
   attachInterrupt(digitalPinToInterrupt(buttonPin3), b_tog3, FALLING);
@@ -282,17 +337,46 @@ void setup ()
 
   MsTimer2::set(1600, LCD_Menu);
   MsTimer2::start();
+  //---------------------------------------------------
+
+  // ---------------- DHT11 설정 ---------------------
+  dht.begin();
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);
+  dht.humidity().getSensor(&sensor);
+  //--------------------------------------------------
 }
 
 void loop () 
 {
+  // ------------- 계속 작동해야 하는 코드 --------------
   rm = analogRead(Rot);
-  RM = map(rm,0,1024,0,7);
+  RM = map(rm,0,1024,0,2);
+
+  if(movalu != RM)
+  {
+    digitalWrite(ledPin1, LOW);
+    digitalWrite(ledPin2, LOW);
+    digitalWrite(ledPin3, LOW);
+    digitalWrite(ledPin4, LOW);
+    t_1 = 0;
+    t_2 = 0;
+    t_3 = 0;
+    t_4 = 0;
+    t_1s = 0;
+    t_2s = 0;
+    t_3s = 0;
+    t_4s = 0;
+    movalu = RM;
+    lcd.clear();
+  }
+
   lcd.setCursor(0, 0);
   RtcDateTime now = Rtc.GetDateTime();
   printDateTime(now);
+  //---------------------------------------------------
 
-  if(RM == 0);
+  if(RM == 0) // ------------- RM == 0 (LCD 메뉴판) ----------------
   {
     lcd.setCursor(13, 0);
     lcd.print("M:1");
@@ -334,9 +418,245 @@ void loop ()
       lcd.print("Select Menu");
       lcd.print("     ");
     }
+  } //---------------------------------------------------
+  else if(RM == 1) //------------- RM == 1 (부저 음) ----------------
+  {
+    lcd.setCursor(13, 0);
+    lcd.print("M:2");
+    lcd.setCursor(0, 1);
+    lcd.print("Buzzer");
+    lcd.print("      ");
+    lcd.setCursor(15, 1);
+    if(t_1 != t_1s)
+    {
+      lcd.print("C");
+      digitalWrite(ledPin1, HIGH);
+      tone(piezo, 523); // 5옥타브 도
+      delay(200);
+      t_1s = t_1;
+      digitalWrite(ledPin1, LOW);
+    }
+    else if(t_2 != t_2s)
+    {
+      lcd.print("D");
+      digitalWrite(ledPin2, HIGH);
+      tone(piezo, 587); // 레
+      delay(200);
+      t_2s = t_2;
+      digitalWrite(ledPin2, LOW);
+    }
+    else if(t_3 != t_3s)
+    {
+      lcd.print("E");
+      digitalWrite(ledPin3, HIGH);
+      tone(piezo, 659); // 미
+      delay(200);
+      t_3s = t_3;
+      digitalWrite(ledPin3, LOW);
+    }
+    else if(t_4 != t_4s)
+    {
+      digitalWrite(ledPin4, HIGH);
+      lcd.print("F");
+      tone(piezo, 698); //  파
+      delay(200);
+      t_4s = t_4;
+      digitalWrite(ledPin4, LOW);
+    }
+  } //---------------------------------------------------
+  else if (RM == 2)
+  {
+    lcd.setCursor(13, 0);
+    lcd.print("M:3");
+    lcd.setCursor(0, 1);
+    if(t_1 == 1)
+    {
+      lcd.print("LM35");
+      lcd.print("       ");
+      int sensor1 = analogRead(LM35);
+      int ku1 = map(sensor1,0,1024,0,4); // 센서값 최대 최소 구해서 바꿔야됨
+      int temperature = 5.0*sensor1*100.0/1024;
+      lcd.setCursor(12, 1);
+      lcd.print(temperature);
+      lcd.print("   ");
+      lcd.setCursor(15, 1);
+      lcd.print(2);
+      if(ku1 == 0)
+      {
+        digitalWrite(ledPin1, LOW);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku1 == 1)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku1 == 2)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku1 == 3)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku1 == 4)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, HIGH);
+      }
+    }
+    else if(t_2 == 1)
+    {
+
+      lcd.print("Light");
+      lcd.print("       ");
+      int sensor2 = analogRead(Light);
+      int ku2 = map(sensor2,0,1024,0,4); // 센서값 최대 최소 구해서 바꿔야됨
+      int voltage = 5.0 / 1023 * sensor2;
+       lcd.setCursor(12, 1);
+      lcd.print(voltage);
+      lcd.print("   ");
+      lcd.setCursor(15, 1);
+      lcd.print("V");
+      if(ku2 == 0)
+      {
+        digitalWrite(ledPin1, LOW);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku2 == 1)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku2 == 2)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku2 == 3)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(ku2 == 4)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, HIGH);
+      }
+      //-----------------------------------------
+    }
+    else if (t_3 == 1)
+    {
+      lcd.print("T : ");
+      sensors_event_t event;
+      dht.temperature().getEvent(&event);
+
+      if (isnan(event.temperature)) {
+        lcd.setCursor(0, 1);
+        lcd.print("      error      ");
+      }
+      else {
+        lcd.setCursor(4, 1);
+        lcd.print(event.temperature);
+        lcd.setCursor(6, 1);
+        lcd.print(2);
+        lcd.print("  ");
+      }
+      dht.humidity().getEvent(&event);
+      if (isnan(event.relative_humidity)) {
+       lcd.setCursor(0, 1);
+        lcd.print("      error      ");
+      }
+      else {
+        lcd.setCursor(9, 1);
+        lcd.print("H : ");
+        lcd.print(event.relative_humidity);
+        lcd.setCursor(15, 1);
+        lcd.print(3);
+      }
+    }
+    else if (t_4 == 1)
+    {
+      lcd.print("IR");
+      lcd.print("            ");
+      long IR_value = analogRead(Rec);
+      long IR_range = cmk_1(IR_value);
+      int cmk = map(IR_value,0,1024,0,4);
+      lcd.setCursor(12, 1);
+      lcd.print(IR_range);
+      lcd.setCursor(14, 1);
+      lcd.print("Cm");
+      if(cmk == 0)
+      {
+        digitalWrite(ledPin1, LOW);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(cmk == 1)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, LOW);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(cmk == 2)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, LOW);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(cmk == 3)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, LOW);
+      }
+      else if(cmk == 4)
+      {
+        digitalWrite(ledPin1, HIGH);
+        digitalWrite(ledPin2, HIGH);
+        digitalWrite(ledPin3, HIGH);
+        digitalWrite(ledPin4, HIGH);
+      }
+
+    }
   }
+  
 }
 
+long cmk_1 (long IR_value)
+{
+  if (IR_value < 10) IR_value = 10;
+  
+  return ((67870.0 / (IR_value - 3.0)) - 40.0)/10;
+}
+
+//--------------- 타이머 필수 함수(?) --------------------
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
 void printDateTime(const RtcDateTime& dt)
@@ -378,3 +698,4 @@ void printDateTime2(const RtcDateTime& dt)
             );
     lcd.print(datestring2);
 }
+//---------------------------------------------------
